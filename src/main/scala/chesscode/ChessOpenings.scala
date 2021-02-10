@@ -20,7 +20,7 @@ object ChessOpenings {
     spark.stop()
 
 
-    println("Yeyy")
+    println("Trying out personal token")
 
 
 
