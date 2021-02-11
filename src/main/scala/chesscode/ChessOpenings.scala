@@ -29,9 +29,32 @@ object ChessOpenings {
     val sc = new SparkContext ("local[*]", "Chess")
     val ChessRDD =  sc.textFile("data/TestData901lines.txt")
 
-    val testprint = ChessRDD.mapPartitions(idx => Array(idx.size).iterator).collect
+    val partitions = ChessRDD.mapPartitions(idx => Array(idx.size).iterator).collect
+    partitions.foreach(println)
 
-    testprint.foreach(println)
+
+    val testprint = ChessRDD.mapPartitions(idx => {
+
+      var z = new Array[String](10)
+
+      for (a <- 0 to 9){
+        z(a) = idx.next
+      }
+
+      Array(z).iterator
+    }).collect
+
+    val tarray = Array(214,512,161,272)
+
+    for (i <- 0 to 1){
+      println("ang partition:------")
+      for (j <- 0 to 9){
+        println(testprint(i)(j))
+      }
+      println("----end ng parition")
+    }
+
+
 
 //
 //    val spark = SparkSession
