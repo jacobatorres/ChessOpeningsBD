@@ -70,7 +70,7 @@ object ChessOpenings {
 //    println("Trying out personal token")
 
 
-
+    sc.stop()
   }
 
 }
