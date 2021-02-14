@@ -35,13 +35,27 @@ object ChessOpenings {
 
     val testprint = ChessRDD.mapPartitions(idx => {
 
+      // go to the nearest "Event"
+      // idx.hasNext ensures that there's a next. In the event that the partition doesnt have a nearest "Event" is
+
+      var temp = idx.next
+      while (!temp.contains("[Event") && idx.hasNext){
+        temp = idx.next
+      }
+
       var z = new Array[String](10)
 
-      for (a <- 0 to 9){
-        z(a) = idx.next
+      if (idx.hasNext) {
+
+        for (a <- 0 to 9){
+          z(a) = temp
+          temp = idx.next
+        }
       }
 
       Array(z).iterator
+
+
     }).collect
 
     val tarray = Array(214,512,161,272)
