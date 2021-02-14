@@ -8,6 +8,7 @@ import scala.io.Source
 
 object ChessOpenings {
 
+
   def main (args: Array[String]) {
 
     Logger.getLogger("org").setLevel(Level.ERROR)
@@ -32,42 +33,103 @@ object ChessOpenings {
     val partitions = ChessRDD.mapPartitions(idx => Array(idx.size).iterator).collect
     partitions.foreach(println)
 
-
+    // mappartition start
     val testprint = ChessRDD.mapPartitions(idx => {
 
       // go to the nearest "Event"
-      // idx.hasNext ensures that there's a next. In the event that the partition doesnt have a nearest "Event" is
+      // idx.hasNext ensures that there's a nex
 
-      var temp = idx.next
-      while (!temp.contains("[Event") && idx.hasNext){
-        temp = idx.next
-      }
+      // TimeFormat, Opening, EloCode, Winner, SiteOfGame, WhiteElo, BlackElo
+      // String      , String, String, Char,   String,     Int,      Int
+      var seqPartition = ()
 
-      var z = new Array[String](10)
+      try {
 
-      if (idx.hasNext) {
+        while(idx.hasNext){
 
-        for (a <- 0 to 9){
-          z(a) = temp
-          temp = idx.next
+          var temp = idx.next
+          while (!temp.contains("[Event")){
+            temp = idx.next
+          }
+
+
+
+          var z = new Array[String](10)
+
+
+          for (a <- 0 to 14){
+
+
+            if (temp.contains("writer_13")){
+              println(temp)
+
+            }
+
+            if(a == 1){
+              // site of play
+              var siteofplay = temp.split(" ")(1).drop(1).dropRight(2)
+
+              println(s"site of play: $siteofplay")
+            } else if (a == 4){
+              // result and or winner
+              var winner = if (temp.split(" ")(1).drop(1).dropRight(2) == "0-1") 'B' else 'W'
+              println(s"winner: $winner")
+
+            } else if (a == 7) {
+              // white ELO
+              var whiteElo = temp.split(" ")(1).drop(1).dropRight(2)
+              println(s"whiteELO: $whiteElo")
+            } else if (a == 8){
+              // black ELO
+
+              var blackElo = temp.split(" ")(1).drop(1).dropRight(2)
+              println(s"blackElo: $blackElo")
+            } else if (a == 11 ){
+              // ECO (opening code)
+              var eco = temp.split(" ")(1).drop(1).dropRight(2)
+              println(s"ECO: $eco")
+
+            } else if (a == 12){
+              // opening
+              var opening = temp.drop(10).dropRight(2)
+              println(s"opening: $opening")
+
+            } else if (a == 13) {
+              // timecontrol
+              var timeControl = temp.split(" ")(1).drop(1).dropRight(2)
+              println(s"timecontrol: $timeControl")
+
+            }
+            // ...
+
+            temp = idx.next
+
+          }
+
+
         }
+
+      } catch {
+        case e: NoSuchElementException => println("End of stream error catched...")
       }
 
-      Array(z).iterator
+      Seq(seqPartition).iterator
 
 
     }).collect
 
+    // mappartition end
+
     val tarray = Array(214,512,161,272)
-
-    for (i <- 0 to 1){
-      println("ang partition:------")
-      for (j <- 0 to 9){
-        println(testprint(i)(j))
-      }
-      println("----end ng parition")
-    }
-
+//
+//    for (i <- 0 to 1){
+//      println("ang partition:------")
+//      for (j <- 0 to 9){
+//        println(testprint(i)(j))
+//      }
+//      println("----end ng parition")
+//    }
+//
 
 
 //
