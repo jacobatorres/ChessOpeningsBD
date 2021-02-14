@@ -2,8 +2,10 @@ package chesscode
 
 import org.apache.spark.sql._
 import org.apache.log4j._
+import org.apache.spark
 import org.apache.spark._
 
+import scala.collection.mutable
 import scala.io.Source
 
 object ChessOpenings {
@@ -24,6 +26,8 @@ object ChessOpenings {
     partitions.foreach(println)
 
     // mappartition start
+
+
     val testprint = ChessRDD.mapPartitions(idx => {
 
       // go to the nearest "Event"
@@ -33,6 +37,8 @@ object ChessOpenings {
       // String      , String, String, Char,   String,     Int,      Int
       var seqPartition = ()
 
+      val GameRecordList = mutable.MutableList[GameRecord]()
+
       try {
 
         while(idx.hasNext){
@@ -41,8 +47,6 @@ object ChessOpenings {
           while (!temp.contains("[Event")){
             temp = idx.next
           }
-
-
 
           var z = new Array[String](10)
 
@@ -55,9 +59,6 @@ object ChessOpenings {
           var blackElo : Int = 0;
 
           for (a <- 0 to 14){
-
-
-
 
             if(a == 1){
               // site of play
@@ -104,8 +105,6 @@ object ChessOpenings {
             }
             // ...
 
-            val newRecord = GameRecord(timeControl, opening, eco, winner, siteofplay, whiteElo, blackElo)
-
 
 
             temp = idx.next
@@ -113,6 +112,9 @@ object ChessOpenings {
           }
           // https://stackoverflow.com/questions/39397652/convert-scala-list-to-dataframe-or-dataset
 
+          // once youre done creating and recording the game, append it to the main
+          val newRecord = GameRecord(timeControl, opening, eco, winner, siteofplay, whiteElo, blackElo)
+          GameRecordList += newRecord
 
         }
 
@@ -120,37 +122,20 @@ object ChessOpenings {
         case e: NoSuchElementException => println("End of stream error caught...")
       }
 
-      Seq(seqPartition).iterator
+
+      GameRecordList.iterator
 
 
-    }).collect
-
-    // mappartition end
-
-    val tarray = Array(214,512,161,272)
-//
-//    for (i <- 0 to 1){
-//      println("ang partition:------")
-//      for (j <- 0 to 9){
-//        println(testprint(i)(j))
-//      }
-//      println("----end ng parition")
-//    }
-//
+    }).collect()
 
 
-//
-//    val spark = SparkSession
-//      .builder
-//      .appName("Test")
-//      .master("local[*]")
-//      .getOrCreate()
-//
-//
-//    spark.stop()
-//
-//
-//    println("Trying out personal token")
+
+    val count = 0;
+
+
+    val toprint = testprint.foreach(println)
+
+
 
 
     sc.stop()
