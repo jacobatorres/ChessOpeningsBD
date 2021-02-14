@@ -8,24 +8,14 @@ import scala.io.Source
 
 object ChessOpenings {
 
+  case class GameRecord(timeControl: String, opening:String, eco: String, winner: Char, siteOfPlay: String,
+                        whiteElo: Int, blackElo: Int)
+
 
   def main (args: Array[String]) {
 
     Logger.getLogger("org").setLevel(Level.ERROR)
 
-    // parse the data to look the the table
-    // make a SQL from it
-
-    // i think sc.textFile automatically does the partitioning, and spark handles the number of partitions
-    // if true, can I make a function per partition so that it's faster?
-
-    // as per these references:
-    // https://stackoverflow.com/questions/40892080/how-to-use-mappartitions-in-spark-scala
-    // https://spark.apache.org/docs/2.1.0/programming-guide.html (ctrl + f textfile)
-    // i should be able to do sc.textfile().mappartitions
-    // the idea is that you split the big text file into partitions,
-    // distribute these partitions into the workers, then do the function per partition
-    // much faster than just having one worker grind everything
 
     val sc = new SparkContext ("local[*]", "Chess")
     val ChessRDD =  sc.textFile("data/TestData901lines.txt")
@@ -37,7 +27,7 @@ object ChessOpenings {
     val testprint = ChessRDD.mapPartitions(idx => {
 
       // go to the nearest "Event"
-      // idx.hasNext ensures that there's a nex
+      // idx.hasNext ensures that there's a next
 
       // TimeFormat, Opening, EloCode, Winner, SiteOfGame, WhiteElo, BlackElo
       // String      , String, String, Char,   String,     Int,      Int
@@ -56,61 +46,78 @@ object ChessOpenings {
 
           var z = new Array[String](10)
 
+          var timeControl : String = null;
+          var opening : String = null;
+          var eco : String = null;
+          var winner : Char = 'N';
+          var siteofplay : String = null;
+          var whiteElo : Int = 0;
+          var blackElo : Int = 0;
 
           for (a <- 0 to 14){
 
 
-            if (temp.contains("writer_13")){
-              println(temp)
 
-            }
 
             if(a == 1){
               // site of play
-              var siteofplay = temp.split(" ")(1).drop(1).dropRight(2)
+              siteofplay = temp.split(" ")(1).drop(1).dropRight(2)
 
               println(s"site of play: $siteofplay")
             } else if (a == 4){
               // result and or winner
-              var winner = if (temp.split(" ")(1).drop(1).dropRight(2) == "0-1") 'B' else 'W'
+              var tempvar = temp.split(" ")(1).drop(1).dropRight(2)
+
+              if (tempvar == "1-0"){
+                winner = 'W'
+              } else if (tempvar == "0-1"){
+                winner = 'B'
+              } else {
+                winner = 'D'
+              }
               println(s"winner: $winner")
 
             } else if (a == 7) {
               // white ELO
-              var whiteElo = temp.split(" ")(1).drop(1).dropRight(2)
+              whiteElo = temp.split(" ")(1).drop(1).dropRight(2).toInt
               println(s"whiteELO: $whiteElo")
             } else if (a == 8){
               // black ELO
 
-              var blackElo = temp.split(" ")(1).drop(1).dropRight(2)
+              blackElo = temp.split(" ")(1).drop(1).dropRight(2).toInt
               println(s"blackElo: $blackElo")
             } else if (a == 11 ){
               // ECO (opening code)
-              var eco = temp.split(" ")(1).drop(1).dropRight(2)
+              eco = temp.split(" ")(1).drop(1).dropRight(2)
               println(s"ECO: $eco")
 
             } else if (a == 12){
               // opening
-              var opening = temp.drop(10).dropRight(2)
+              opening = temp.drop(10).dropRight(2)
               println(s"opening: $opening")
 
             } else if (a == 13) {
               // timecontrol
-              var timeControl = temp.split(" ")(1).drop(1).dropRight(2)
+              timeControl = temp.split(" ")(1).drop(1).dropRight(2)
               println(s"timecontrol: $timeControl")
 
             }
             // ...
 
+            val newRecord = GameRecord(timeControl, opening, eco, winner, siteofplay, whiteElo, blackElo)
+
+
+
             temp = idx.next
 
           }
+          // https://stackoverflow.com/questions/39397652/convert-scala-list-to-dataframe-or-dataset
 
 
         }
 
       } catch {
-        case e: NoSuchElementException => println("End of stream error catched...")
+        case e: NoSuchElementException => println("End of stream error caught...")
       }
 
       Seq(seqPartition).iterator
