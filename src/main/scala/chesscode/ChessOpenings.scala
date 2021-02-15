@@ -2,16 +2,15 @@ package chesscode
 
 import org.apache.spark.sql._
 import org.apache.log4j._
-import org.apache.spark
 import org.apache.spark._
 
 import scala.collection.mutable
 import scala.io.Source
+case class GameRecord(timeControl: String, opening:String, eco: String, winner: String, siteOfPlay: String,
+                      whiteElo: Int, blackElo: Int)
 
 object ChessOpenings {
 
-  case class GameRecord(timeControl: String, opening:String, eco: String, winner: Char, siteOfPlay: String,
-                        whiteElo: Int, blackElo: Int)
 
 
   def main (args: Array[String]) {
@@ -28,7 +27,7 @@ object ChessOpenings {
     // mappartition start
 
 
-    val testprint = ChessRDD.mapPartitions(idx => {
+    val recordsRDD = ChessRDD.mapPartitions(idx => {
 
       // go to the nearest "Event"
       // idx.hasNext ensures that there's a next
@@ -53,7 +52,7 @@ object ChessOpenings {
           var timeControl : String = null;
           var opening : String = null;
           var eco : String = null;
-          var winner : Char = 'N';
+          var winner : String = null;
           var siteofplay : String = null;
           var whiteElo : Int = 0;
           var blackElo : Int = 0;
@@ -70,11 +69,11 @@ object ChessOpenings {
               var tempvar = temp.split(" ")(1).drop(1).dropRight(2)
 
               if (tempvar == "1-0"){
-                winner = 'W'
+                winner = "W"
               } else if (tempvar == "0-1"){
-                winner = 'B'
+                winner = "B"
               } else {
-                winner = 'D'
+                winner = "D"
               }
               println(s"winner: $winner")
 
@@ -123,22 +122,35 @@ object ChessOpenings {
       }
 
 
-      GameRecordList.iterator
+      Seq(GameRecordList).iterator
 
 
-    }).collect()
+    }).collect().flatten
+
+    val spark = SparkSession
+      .builder
+      .appName("SparkSQLtest")
+      .master("local[*]")
+      .getOrCreate()
 
 
+    // make the dataset adhere to the Friends class
+    // make a Friends schema with the dataset
+    import spark.implicits._
+    val df = recordsRDD.toSeq.toDF()
+    df.createOrReplaceTempView("tbl_ChessRecords")
 
-    val count = 0;
+    df.show(10)
+
+    val res = spark.sql("select * from tbl_ChessRecords cr where cr.timeControl ='60+0' ").collect().foreach(println)
 
 
-    val toprint = testprint.foreach(println)
 
 
 
 
     sc.stop()
+    spark.stop()
   }
 
 }
