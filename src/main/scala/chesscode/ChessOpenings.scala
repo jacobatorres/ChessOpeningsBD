@@ -25,16 +25,10 @@ object ChessOpenings {
     partitions.foreach(println)
 
     // mappartition start
-
-
     val recordsRDD = ChessRDD.mapPartitions(idx => {
 
       // go to the nearest "Event"
       // idx.hasNext ensures that there's a next
-
-      // TimeFormat, Opening, EloCode, Winner, SiteOfGame, WhiteElo, BlackElo
-      // String      , String, String, Char,   String,     Int,      Int
-      var seqPartition = ()
 
       val GameRecordList = mutable.MutableList[GameRecord]()
 
@@ -47,8 +41,6 @@ object ChessOpenings {
             temp = idx.next
           }
 
-          var z = new Array[String](10)
-
           var timeControl : String = null;
           var opening : String = null;
           var eco : String = null;
@@ -57,6 +49,8 @@ object ChessOpenings {
           var whiteElo : Int = 0;
           var blackElo : Int = 0;
 
+
+          // at this point, the next 14 lines are the important data so we get them
           for (a <- 0 to 14){
 
             if(a == 1){
@@ -81,11 +75,12 @@ object ChessOpenings {
               // white ELO
               whiteElo = temp.split(" ")(1).drop(1).dropRight(2).toInt
               println(s"whiteELO: $whiteElo")
+
             } else if (a == 8){
               // black ELO
-
               blackElo = temp.split(" ")(1).drop(1).dropRight(2).toInt
               println(s"blackElo: $blackElo")
+
             } else if (a == 11 ){
               // ECO (opening code)
               eco = temp.split(" ")(1).drop(1).dropRight(2)
@@ -109,9 +104,9 @@ object ChessOpenings {
             temp = idx.next
 
           }
-          // https://stackoverflow.com/questions/39397652/convert-scala-list-to-dataframe-or-dataset
+          // once youre done creating and recording one game, append it to the GamerecordList
 
-          // once youre done creating and recording the game, append it to the main
+
           val newRecord = GameRecord(timeControl, opening, eco, winner, siteofplay, whiteElo, blackElo)
           GameRecordList += newRecord
 
@@ -121,6 +116,8 @@ object ChessOpenings {
         case e: NoSuchElementException => println("End of stream error caught...")
       }
 
+      // now, GameRecordList should be List(GameRecord(..,..,..,), GameRecord(..,..,..), ... )
+
 
       Seq(GameRecordList).iterator
 
@@ -129,22 +126,23 @@ object ChessOpenings {
 
     val spark = SparkSession
       .builder
-      .appName("SparkSQLtest")
+      .appName("ChessOpeningsBD")
       .master("local[*]")
       .getOrCreate()
 
 
-    // make the dataset adhere to the Friends class
-    // make a Friends schema with the dataset
+    // this part converts the RDD to a DataFrame
     import spark.implicits._
     val df = recordsRDD.toSeq.toDF()
     df.createOrReplaceTempView("tbl_ChessRecords")
 
     df.show(10)
 
-    val res = spark.sql("select * from tbl_ChessRecords cr where cr.timeControl ='60+0' ").collect().foreach(println)
+    // add in the averageElo of the two players
+    // then plug in the timeConrol = 600+0 and the EloCode = 2100
 
 
+    spark.sql("select * from tbl_ChessRecords cr where cr.timeControl ='60+0' ").show(10)
 
 
 
