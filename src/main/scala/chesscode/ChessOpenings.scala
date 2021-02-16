@@ -19,7 +19,7 @@ object ChessOpenings {
 
 
     val sc = new SparkContext ("local[*]", "Chess")
-    val ChessRDD =  sc.textFile("data/TestData901lines.txt")
+    val ChessRDD =  sc.textFile("data/test5000lines.txt")
 
     val partitions = ChessRDD.mapPartitions(idx => Array(idx.size).iterator).collect
     partitions.foreach(println)
@@ -114,6 +114,8 @@ object ChessOpenings {
 
       } catch {
         case e: NoSuchElementException => println("End of stream error caught...")
+
+        case _: Throwable => println("Got some other kind of weird exception")
       }
 
       // now, GameRecordList should be List(GameRecord(..,..,..,), GameRecord(..,..,..), ... )
@@ -134,15 +136,28 @@ object ChessOpenings {
     // this part converts the RDD to a DataFrame
     import spark.implicits._
     val df = recordsRDD.toSeq.toDF()
-    df.createOrReplaceTempView("tbl_ChessRecords")
 
-    df.show(10)
+    val finaldf = df.withColumn("averageElo", (df("whiteElo") + df("blackElo")) / 2)
+
+
+    finaldf.show(10)
+    finaldf.createOrReplaceTempView("tbl_ChessRecords")
+
+    var timecontrolinput = "60+0"
+    var eloinput = 2000
+    var winnerinput = 'W'
+    
 
     // add in the averageElo of the two players
     // then plug in the timeConrol = 600+0 and the EloCode = 2100
 
 
-    spark.sql("select * from tbl_ChessRecords cr where cr.timeControl ='60+0' ").show(10)
+    spark.sql(s"select cr.opening, cr.winner, cr.timecontrol, count(*) " +
+      s"from tbl_ChessRecords cr where cr.timeControl = '$timecontrolinput' " +
+      s" and cr.averageElo between ($eloinput - 300) AND ($eloinput + 300) " +
+      s" and cr.winner = '$winnerinput' " +
+      s"group by cr.opening, cr.winner, cr.timecontrol order by 4 desc").show(10, false)
+
 
 
 
