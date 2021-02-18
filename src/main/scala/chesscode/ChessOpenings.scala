@@ -57,7 +57,6 @@ object ChessOpenings {
               // site of play
               siteofplay = temp.split(" ")(1).drop(1).dropRight(2)
 
-              println(s"site of play: $siteofplay")
             } else if (a == 4){
               // result and or winner
               var tempvar = temp.split(" ")(1).drop(1).dropRight(2)
@@ -69,32 +68,26 @@ object ChessOpenings {
               } else {
                 winner = "D"
               }
-              println(s"winner: $winner")
 
             } else if (a == 7) {
               // white ELO
               whiteElo = temp.split(" ")(1).drop(1).dropRight(2).toInt
-              println(s"whiteELO: $whiteElo")
 
             } else if (a == 8){
               // black ELO
               blackElo = temp.split(" ")(1).drop(1).dropRight(2).toInt
-              println(s"blackElo: $blackElo")
 
             } else if (a == 11 ){
               // ECO (opening code)
               eco = temp.split(" ")(1).drop(1).dropRight(2)
-              println(s"ECO: $eco")
 
             } else if (a == 12){
               // opening
               opening = temp.drop(10).dropRight(2)
-              println(s"opening: $opening")
 
             } else if (a == 13) {
               // timecontrol
               timeControl = temp.split(" ")(1).drop(1).dropRight(2)
-              println(s"timecontrol: $timeControl")
 
             }
             // ...
@@ -106,7 +99,7 @@ object ChessOpenings {
           }
           // once youre done creating and recording one game, append it to the GamerecordList
 
-
+          println("done with one record")
           val newRecord = GameRecord(timeControl, opening, eco, winner, siteofplay, whiteElo, blackElo)
           GameRecordList += newRecord
 
@@ -140,24 +133,34 @@ object ChessOpenings {
     val finaldf = df.withColumn("averageElo", (df("whiteElo") + df("blackElo")) / 2)
 
 
-    finaldf.show(10)
+    // finaldf.show(10)
     finaldf.createOrReplaceTempView("tbl_ChessRecords")
 
-    var timecontrolinput = "60+0"
+    var timecontrolinput = "600+0"
     var eloinput = 2000
     var winnerinput = 'W'
-    
+
 
     // add in the averageElo of the two players
     // then plug in the timeConrol = 600+0 and the EloCode = 2100
 
+    println(s"\n\n\nResults: \nTimeControl: $timecontrolinput, Elo: $eloinput")
+
+    println("Play as: White ")
 
     spark.sql(s"select cr.opening, cr.winner, cr.timecontrol, count(*) " +
       s"from tbl_ChessRecords cr where cr.timeControl = '$timecontrolinput' " +
       s" and cr.averageElo between ($eloinput - 300) AND ($eloinput + 300) " +
-      s" and cr.winner = '$winnerinput' " +
+      s" and cr.winner = 'W' " +
       s"group by cr.opening, cr.winner, cr.timecontrol order by 4 desc").show(10, false)
 
+    println("Play as: Black ")
+
+    spark.sql(s"select cr.opening, cr.winner, cr.timecontrol, count(*) " +
+      s"from tbl_ChessRecords cr where cr.timeControl = '$timecontrolinput' " +
+      s" and cr.averageElo between ($eloinput - 300) AND ($eloinput + 300) " +
+      s" and cr.winner = 'B' " +
+      s"group by cr.opening, cr.winner, cr.timecontrol order by 4 desc").show(10, false)
 
 
 
