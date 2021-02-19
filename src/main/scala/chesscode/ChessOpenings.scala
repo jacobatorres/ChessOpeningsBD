@@ -17,6 +17,8 @@ object ChessOpenings {
 
     Logger.getLogger("org").setLevel(Level.ERROR)
 
+    val t1 = System.nanoTime
+
 
     val sc = new SparkContext ("local[*]", "Chess")
     val ChessRDD =  sc.textFile("data/test5000lines.txt")
@@ -167,6 +169,11 @@ object ChessOpenings {
 
     sc.stop()
     spark.stop()
+
+    /* your code */
+
+    val duration = (System.nanoTime - t1) / 1e9d // 1e9d is 10^9. Nanosecond is too many! So dividing it by 10^9 makes it readable
+    println(s"Duration of the run: $duration seconds")
   }
 
 }
