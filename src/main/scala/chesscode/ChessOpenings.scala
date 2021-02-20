@@ -23,8 +23,6 @@ object ChessOpenings {
     val sc = new SparkContext ("local[*]", "Chess")
     val ChessRDD =  sc.textFile("data/test5000lines.txt")
 
-    val partitions = ChessRDD.mapPartitions(idx => Array(idx.size).iterator).collect
-    partitions.foreach(println)
 
     // mappartition start
     val recordsRDD = ChessRDD.mapPartitions(idx => {
@@ -101,7 +99,6 @@ object ChessOpenings {
           }
           // once youre done creating and recording one game, append it to the GamerecordList
 
-          println("done with one record")
           val newRecord = GameRecord(timeControl, opening, eco, winner, siteofplay, whiteElo, blackElo)
           GameRecordList += newRecord
 
@@ -115,11 +112,15 @@ object ChessOpenings {
 
       // now, GameRecordList should be List(GameRecord(..,..,..,), GameRecord(..,..,..), ... )
 
-
+      println("I have now finished processing in this partition")
       Seq(GameRecordList).iterator
 
 
     }).collect().flatten
+
+
+    // val partitions = ChessRDD.mapPartitions(idx => Array(idx.size).iterator).collect
+    // partitions.foreach(println)
 
     val spark = SparkSession
       .builder
