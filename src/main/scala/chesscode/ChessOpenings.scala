@@ -19,10 +19,15 @@ object ChessOpenings {
 
     val t1 = System.nanoTime
 
+    // when running in local, use these
+    //    val sc = new SparkContext("local[*]", "Chess")
+    //    val ChessRDD =  sc.textFile("data/test5000lines.txt")
+    // then keep the        .master("local[*]") in the sparksession part below
 
-    val sc = new SparkContext ("local[*]", "Chess")
-    val ChessRDD =  sc.textFile("data/test5000lines.txt")
-
+    // when running in amazon EMR
+    val conf = new SparkConf().setAppName("Chess") // no need to declare master; EMR knows how to handle that
+    val sc = new SparkContext(conf)
+    val ChessRDD =  sc.textFile("s3n://datachessbd/bigfile.txt", 15000)
 
     // mappartition start
     val recordsRDD = ChessRDD.mapPartitions(idx => {
@@ -118,14 +123,14 @@ object ChessOpenings {
 
     }).collect().flatten
 
-
-    // val partitions = ChessRDD.mapPartitions(idx => Array(idx.size).iterator).collect
-    // partitions.foreach(println)
+//
+//    val partitions = ChessRDD.mapPartitions(idx => Array(idx.size).iterator).collect
+//    partitions.foreach(println)
 
     val spark = SparkSession
       .builder
       .appName("ChessOpeningsBD")
-      .master("local[*]")
+      // .master("local[*]")
       .getOrCreate()
 
 
