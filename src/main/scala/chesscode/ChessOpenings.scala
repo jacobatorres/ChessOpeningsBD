@@ -19,15 +19,19 @@ object ChessOpenings {
 
     val t1 = System.nanoTime
 
+    // renove the siteofplay, etc. the things you dont need
+    // show only 5
+    //
+
     // when running in local, use these
-    //    val sc = new SparkContext("local[*]", "Chess")
-    //    val ChessRDD =  sc.textFile("data/test5000lines.txt")
+    val sc = new SparkContext("local[*]", "Chess")
+    val ChessRDD =  sc.textFile("data/test5000lines.txt")
     // then keep the        .master("local[*]") in the sparksession part below
 
     // when running in amazon EMR
-    val conf = new SparkConf().setAppName("Chess") // no need to declare master; EMR knows how to handle that
-    val sc = new SparkContext(conf)
-    val ChessRDD =  sc.textFile("s3n://datachessbd/bigfile.txt", 15000)
+//    val conf = new SparkConf().setAppName("Chess") // no need to declare master; EMR knows how to handle that
+//    val sc = new SparkContext(conf)
+//    val ChessRDD =  sc.textFile("s3n://datachessbd/bigfile.txt", 15000)
 
     // mappartition start
     val recordsRDD = ChessRDD.mapPartitions(idx => {
@@ -130,7 +134,7 @@ object ChessOpenings {
     val spark = SparkSession
       .builder
       .appName("ChessOpeningsBD")
-      // .master("local[*]")
+      .master("local[*]")
       .getOrCreate()
 
 
@@ -160,7 +164,7 @@ object ChessOpenings {
       s"from tbl_ChessRecords cr where cr.timeControl = '$timecontrolinput' " +
       s" and cr.averageElo between ($eloinput - 300) AND ($eloinput + 300) " +
       s" and cr.winner = 'W' " +
-      s"group by cr.opening, cr.winner, cr.timecontrol order by 4 desc").show(10, false)
+      s"group by cr.opening, cr.winner, cr.timecontrol order by 4 desc").show(5, false)
 
     println("Play as: Black ")
 
@@ -168,7 +172,7 @@ object ChessOpenings {
       s"from tbl_ChessRecords cr where cr.timeControl = '$timecontrolinput' " +
       s" and cr.averageElo between ($eloinput - 300) AND ($eloinput + 300) " +
       s" and cr.winner = 'B' " +
-      s"group by cr.opening, cr.winner, cr.timecontrol order by 4 desc").show(10, false)
+      s"group by cr.opening, cr.winner, cr.timecontrol order by 4 desc").show(5, false)
 
 
 
