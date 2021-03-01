@@ -6,8 +6,7 @@ import org.apache.spark._
 
 import scala.collection.mutable
 import scala.io.Source
-case class GameRecord(timeControl: String, opening:String, eco: String, winner: String, siteOfPlay: String,
-                      whiteElo: Int, blackElo: Int)
+case class GameRecord(timeControl: String, opening:String, winner: String, whiteElo: Int, blackElo: Int)
 
 object ChessOpenings {
 
@@ -18,10 +17,6 @@ object ChessOpenings {
     Logger.getLogger("org").setLevel(Level.ERROR)
 
     val t1 = System.nanoTime
-
-    // renove the siteofplay, etc. the things you dont need
-    // show only 5
-    //
 
     // when running in local, use these
     val sc = new SparkContext("local[*]", "Chess")
@@ -62,11 +57,7 @@ object ChessOpenings {
           // at this point, the next 14 lines are the important data so we get them
           for (a <- 0 to 14){
 
-            if(a == 1){
-              // site of play
-              siteofplay = temp.split(" ")(1).drop(1).dropRight(2)
-
-            } else if (a == 4){
+            if (a == 4){
               // result and or winner
               var tempvar = temp.split(" ")(1).drop(1).dropRight(2)
 
@@ -86,10 +77,6 @@ object ChessOpenings {
               // black ELO
               blackElo = temp.split(" ")(1).drop(1).dropRight(2).toInt
 
-            } else if (a == 11 ){
-              // ECO (opening code)
-              eco = temp.split(" ")(1).drop(1).dropRight(2)
-
             } else if (a == 12){
               // opening
               opening = temp.drop(10).dropRight(2)
@@ -108,7 +95,7 @@ object ChessOpenings {
           }
           // once youre done creating and recording one game, append it to the GamerecordList
 
-          val newRecord = GameRecord(timeControl, opening, eco, winner, siteofplay, whiteElo, blackElo)
+          val newRecord = GameRecord(timeControl, opening, winner, whiteElo, blackElo)
           GameRecordList += newRecord
 
         }
@@ -145,12 +132,10 @@ object ChessOpenings {
     val finaldf = df.withColumn("averageElo", (df("whiteElo") + df("blackElo")) / 2)
 
 
-    // finaldf.show(10)
     finaldf.createOrReplaceTempView("tbl_ChessRecords")
 
     var timecontrolinput = "600+0"
     var eloinput = 2000
-    var winnerinput = 'W'
 
 
     // add in the averageElo of the two players
